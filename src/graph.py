@@ -80,11 +80,15 @@ class Graph:
         
         for e in self.adj:
             dist[e] = math.inf
+             
+        for e in self.adj:
+            node = e.split(",") # node[0] = a, node[1] = 1
+            if node[0] == start:
+                dist[e] = 0
+                prev[e] = None
+                heapq.heappush(queue, (0, e)) # dist is 0 at the start
             
-        dist[start] = 0
-        prev[start] = None
-            
-        heapq.heappush(queue, (0, start)) # dist is 0 at the start
+        
         
         while queue: # while our queue is not empty
             
@@ -94,7 +98,7 @@ class Graph:
             for e in self.adj[u]:
                 # e = ('a', 2, 1)
                 v = e[0]
-                weight = e[2]
+                weight = e[1]
 
                 if dist[v] > dist[u] + weight:
                     # assigning new dist for v node
@@ -103,15 +107,25 @@ class Graph:
                     # keep parent
                     prev[v] = u
         
+        tmp = math.inf
+        end_name = ""
+        for e in self.adj:
+            node = e.split(",") # node[0] = a, node[1] = 1
+            if node[0] == end:
+                if dist[e] < tmp:
+                    tmp = dist[e]
+                    end_name = e
+
         # Backtracking the path
         path = []
-        n = end
+        
+        n = end_name
         while n:
             path.append(n)
             n = prev[n]
         path.reverse()
         
-        return dist[end], path
+        return dist[end_name], path
     
     def add_edge_simplified(self, vertex, to_edge, weight):
         """
@@ -137,11 +151,7 @@ class Graph:
                 print(e[1])
                 vIn[e[0]].add(e[1] + 1)
                 vOut[k].add(e[1])  
-        
-        print(vOut['a'])
-        
-        #print(vIn)
-        #print(vOut)
+
         
         for k in vIn:
             v[k] = set()
@@ -165,33 +175,22 @@ class Graph:
                     g.add_edge_simplified(k + "," + str(tmp), k + "," + str(e), 0)
                 tmp = e
             
-            
-        print(vOut)
-        print(vIn)
-        
-        state = False
-        
+        # for all nodes in our new graphs as a,1 a,2 a,3
         for e in g.adj:
             node = e.split(",") # node[0] = a, node[1] = 1
-            #print(node[0])
-            state = False
+
+            tmp = ''
+            # for all decendent of our node in the original graph 'a'
             for f in self.adj[node[0]]:
-                if state:
-                    break
-                # v = ('b', 2, 1) 
                 
-                for o in vOut[node[0]]:
-                    print(node[0], o)
-                    if o + 1 in vIn[f[0]]:
-                        g.add_edge_simplified(e, f[0] + "," + str(o + 1), 1)
-                        state = True
-                        break
-              
-                
-                
+                # 'b' or 'c'
+                if tmp != f[0]:
+                    tmp = f[0]
+                    #print(f)
+                    current_weight = int(node[1])
+                    # if the weight of the node exist in vIn of the letter f[0]
+                    if current_weight + 1 in vIn[f[0]]:
+                        g.add_edge_simplified(e, f[0] + ',' + str(current_weight + 1), 1)   
         
-        # print(v)
-        g.print()
-        #print(vOut)
         return g
         
