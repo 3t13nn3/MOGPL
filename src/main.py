@@ -11,6 +11,9 @@ if __name__ == "__main__":
     else:
         g.create_from_file(sys.argv[1])
     
-    g.print()
+    # g.print()
     
-    print(g.dijkstra('a', 'i'))
+    g2 = Graph()
+    g.create_simplified()
+    
+    #print(g.dijkstra('a', 'l'))

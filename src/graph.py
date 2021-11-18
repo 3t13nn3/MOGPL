@@ -16,7 +16,7 @@ class Graph:
     
     def create_from_file(self, file_name):
         """
-        Creating an oriented grpah from a given path.
+        Creating an oriented graph from a given path.
         Construct each vertex and edge by browsing lines of the file.
         """
         # Recovering lines
@@ -34,7 +34,7 @@ class Graph:
             self.adj[v] = []
 
         # Adding edges into our adj
-        for l in lines[(2 + self.nb_vertices):(2 + self.nb_vertices) + self.nb_edges]:
+        for l in lines[(2 + self.nb_vertices):(2 + self.nb_vertices) + self.nb_edges + 1]:
             to_split = l.split(",") # parse lines
             self.add_edge(to_split[0][1:], to_split[1], int(to_split[2]), int(to_split[3][:-1]))
     
@@ -94,7 +94,7 @@ class Graph:
             for e in self.adj[u]:
                 # e = ('a', 2, 1)
                 v = e[0]
-                weight = e[1]
+                weight = e[2]
 
                 if dist[v] > dist[u] + weight:
                     # assigning new dist for v node
@@ -112,4 +112,86 @@ class Graph:
         path.reverse()
         
         return dist[end], path
+    
+    def add_edge_simplified(self, vertex, to_edge, weight):
+        """
+        Same method as above wityh only a weight
+        """
+        self.adj[vertex].append((to_edge, weight))
+        
+    def create_simplified(self):
+        g = Graph()
+        vIn = {}
+        vOut = {}
+        v = {}
+        
+        for e in self.adj:
+            # using set for unicity (we don't want multiple time the same departur date)
+            vOut[e] = set()
+            vIn[e] = set()
+        
+        for k in self.adj:
+            # k = a, b ,c ....
+            for e in self.adj[k]:
+                # ('b', 2, 1)   
+                print(e[1])
+                vIn[e[0]].add(e[1] + 1)
+                vOut[k].add(e[1])  
+        
+        print(vOut['a'])
+        
+        #print(vIn)
+        #print(vOut)
+        
+        for k in vIn:
+            v[k] = set()
+            while len(vIn[k]) != 0 and len(vOut[k]) != 0 and min(vIn[k]) > min(vOut[k]):
+                vOut[k].remove(min(vOut[k]))
+                        
+            v[k] = sorted(vIn[k].union(vOut[k]))
             
+            #print(v[k])
+            
+            tmp = None
+            # get first element of the set
+            first = None
+            for e in v[k]:
+                first = e
+                break
+            
+            for e in v[k]:
+                g.adj[k + "," + str(e)] = []
+                if e != first:
+                    g.add_edge_simplified(k + "," + str(tmp), k + "," + str(e), 0)
+                tmp = e
+            
+            
+        print(vOut)
+        print(vIn)
+        
+        state = False
+        
+        for e in g.adj:
+            node = e.split(",") # node[0] = a, node[1] = 1
+            #print(node[0])
+            state = False
+            for f in self.adj[node[0]]:
+                if state:
+                    break
+                # v = ('b', 2, 1) 
+                
+                for o in vOut[node[0]]:
+                    print(node[0], o)
+                    if o + 1 in vIn[f[0]]:
+                        g.add_edge_simplified(e, f[0] + "," + str(o + 1), 1)
+                        state = True
+                        break
+              
+                
+                
+        
+        # print(v)
+        g.print()
+        #print(vOut)
+        return g
+        
