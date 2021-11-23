@@ -82,6 +82,7 @@ class Graph:
 
         end_name = ""
         current_start = None
+
         while end_name == "" and len(start_nodes) != 0:
             current_start = start_nodes[-1]
             dist = {}
@@ -101,7 +102,7 @@ class Graph:
             prev[current_start] = None
             heapq.heappush(queue, (0, current_start))
 
-            # remove the current start
+            # remove the current start from our start list
             start_nodes = start_nodes[:-1]
                     
             while queue: # while our queue is not empty
@@ -127,7 +128,7 @@ class Graph:
                 if node[0] == end and dist[e] != math.inf:
                     end_name = e
                     break
-
+                
         # Backtracking the path
         path = []
         n = end_name
@@ -202,7 +203,11 @@ class Graph:
             n = prev[n]
         path.reverse()
         
-        return dist[end_name], path
+        final_dist = None
+        if end_name != "":
+            final_dist = dist[end_name]
+
+        return final_dist, path
     
     def add_edge_simplified(self, vertex, to_edge, weight):
         """

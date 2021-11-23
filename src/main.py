@@ -16,4 +16,5 @@ if __name__ == "__main__":
     
     g2.print()
 
-    print(g2.latest_departure('a', 'l'))
+    print(g2.latest_departure('a', 'i'))
+    print(g2.shortest_path('a', 'i'))
