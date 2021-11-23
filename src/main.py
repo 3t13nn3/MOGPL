@@ -15,4 +15,5 @@ if __name__ == "__main__":
     g2 = g.create_simplified()
     
     g2.print()
-    print(g2.dijkstra('a', 'l'))
+
+    print(g2.latest_departure('a', 'l'))

@@ -67,7 +67,83 @@ class Graph:
             for e in self.adj[k]:
                 print(f" -> {e}")
 
-    def dijkstra(self, start, end):
+    # Bellman-Ford ?
+    def earliest_arrival(self, start, end):
+        pass
+    
+    # Dijkstra from all departure nodes. Test from the bigger to the last if we can reach arrival if we have one, then cut
+    def latest_departure(self, start, end):
+        # recovery all the nodes to start with 
+        start_nodes = []
+        for e in self.adj:
+            node = e.split(",") # node[0] = a, node[1] = 1
+            if node[0] == start:
+                start_nodes.append(e)
+
+        end_name = ""
+        current_start = None
+        while end_name == "" and len(start_nodes) != 0:
+            current_start = start_nodes[-1]
+            dist = {}
+            prev = {}
+            queue = []
+            
+            # marking all nodes with inf dist expect for the start node, we don't need lower days nodes
+            for e in self.adj:
+                node = e.split(",") # node[0] = a, node[1] = 1
+                start = current_start.split(",")
+                if node[0] == start[0] and int(node[1]) < int(start[1]):
+                    continue
+                dist[e] = math.inf
+
+            
+            dist[current_start] = 0
+            prev[current_start] = None
+            heapq.heappush(queue, (0, current_start))
+
+            # remove the current start
+            start_nodes = start_nodes[:-1]
+                    
+            while queue: # while our queue is not empty
+                
+                # extract the minimum distance of the queue and remove it           
+                _, u = heapq.heappop(queue)
+                
+                for e in self.adj[u]:
+                    # e = ('a', 2, 1)
+                    v = e[0]
+                    weight = e[1]
+
+                    if dist[v] > dist[u] + weight:
+                        # assigning new dist for v node
+                        dist[v] = dist[u] + weight
+                        heapq.heappush(queue, (dist[v], v))
+                        # keep parent
+                        prev[v] = u
+            
+            # checking if we got a path to our arrival node (if the node dist isn't +inf)
+            for e in self.adj:
+                node = e.split(",") # node[0] = a, node[1] = 1
+                if node[0] == end and dist[e] != math.inf:
+                    end_name = e
+                    break
+
+        # Backtracking the path
+        path = []
+        n = end_name
+        while n:
+            path.append(n)
+            n = prev[n]
+        path.reverse()
+        
+        return path
+    
+    # lowest durée(P) = fin(P) - début(P)
+    # mix of earliest arrival and latest_departure
+    def fastest_path(self, start, end):
+        pass
+
+    def shortest_path(self, start, end):
         """
         Complexity in O(E*log(V))
         V number of vertices
@@ -87,6 +163,7 @@ class Graph:
                 dist[e] = 0
                 prev[e] = None
                 heapq.heappush(queue, (0, e)) # dist is 0 at the start
+                break # we could take the first
             
         
         
@@ -135,30 +212,30 @@ class Graph:
         
     def create_simplified(self):
         g = Graph()
-        vIn = {}
-        vOut = {}
+        v_in = {}
+        v_out = {}
         v = {}
         
         for e in self.adj:
             # using set for unicity (we don't want multiple time the same departur date)
-            vOut[e] = set()
-            vIn[e] = set()
+            v_out[e] = set()
+            v_in[e] = set()
         
         for k in self.adj:
             # k = a, b ,c ....
             for e in self.adj[k]:
                 # ('b', 2, 1)   
-                print(e[1])
-                vIn[e[0]].add(e[1] + 1)
-                vOut[k].add(e[1])  
+                # print(e[1])
+                v_in[e[0]].add(e[1] + 1)
+                v_out[k].add(e[1])  
 
         
-        for k in vIn:
+        for k in v_in:
             v[k] = set()
-            while len(vIn[k]) != 0 and len(vOut[k]) != 0 and min(vIn[k]) > min(vOut[k]):
-                vOut[k].remove(min(vOut[k]))
+            while len(v_in[k]) != 0 and len(v_out[k]) != 0 and min(v_in[k]) > min(v_out[k]):
+                v_out[k].remove(min(v_out[k]))
                         
-            v[k] = sorted(vIn[k].union(vOut[k]))
+            v[k] = sorted(v_in[k].union(v_out[k]))
             
             #print(v[k])
             
@@ -174,22 +251,32 @@ class Graph:
                 if e != first:
                     g.add_edge_simplified(k + "," + str(tmp), k + "," + str(e), 0)
                 tmp = e
-            
+        '''
+        print(v_in)  
+        print(v_out)
+        print(v)
+        '''
         # for all nodes in our new graphs as a,1 a,2 a,3
         for e in g.adj:
             node = e.split(",") # node[0] = a, node[1] = 1
 
             tmp = ''
+            
             # for all decendent of our node in the original graph 'a'
             for f in self.adj[node[0]]:
                 
                 # 'b' or 'c'
                 if tmp != f[0]:
-                    tmp = f[0]
                     #print(f)
+                    tmp = f[0]
+                    
                     current_weight = int(node[1])
-                    # if the weight of the node exist in vIn of the letter f[0]
-                    if current_weight + 1 in vIn[f[0]]:
+                    # if the weight of the node exist in v_in of the letter f[0]
+                    
+                    if current_weight + 1 in v_in[f[0]]:
+                        #####CHECK FOR A BETTER SOLUTION
+                        v_in[f[0]].remove(current_weight + 1)
+
                         g.add_edge_simplified(e, f[0] + ',' + str(current_weight + 1), 1)   
         
         return g
