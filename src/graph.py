@@ -67,9 +67,69 @@ class Graph:
             for e in self.adj[k]:
                 print(f" -> {e}")
 
-    # Bellman-Ford ?
+    # Dijkstra but we take the lowest time end node as end
     def earliest_arrival(self, start, end):
-        pass
+        # recovering the lower time end node (the first we meet)
+        lower_end = None
+        for e in self.adj:
+            node = e.split(",") # node[0] = a, node[1] = 1
+            if node[0] == end:
+                lower_end = e
+                break
+
+        # if invalid end node
+        if lower_end == None:
+            return []
+        
+        # then dijkstra to the defined lowest_end
+        dist = {}
+        prev = {}
+        queue = []
+        
+        for e in self.adj:
+            dist[e] = math.inf
+             
+        for e in self.adj:
+            node = e.split(",") # node[0] = a, node[1] = 1
+            if node[0] == start:
+                dist[e] = 0
+                prev[e] = None
+                heapq.heappush(queue, (0, e)) # dist is 0 at the start
+                break # we could take the first
+
+        while queue and (dist[lower_end] == math.inf): # while our queue is not empty and we haven't reach our end
+            
+            # extract the minimum distance of the queue and remove it           
+            _, u = heapq.heappop(queue)
+               
+            for e in self.adj[u]:
+                v = e[0]
+                weight = e[1]
+
+                if dist[v] > dist[u] + weight:
+                    # assigning new dist for v node
+                    dist[v] = dist[u] + weight
+                    heapq.heappush(queue, (dist[v], v))
+                    # keep parent
+                    prev[v] = u
+
+        # Backtracking the path
+        path = []
+
+        n = lower_end
+        while n:
+            path.append(n)
+            tmp = n.split(",")
+            current = n.split(",")
+            while tmp[0] == current[0]:
+                n = prev[n] 
+                if n == None:
+                    break
+                current = n.split(",")
+        path.reverse()
+        
+        return path
+                
     
     # Dijkstra from all departure nodes. Test from the bigger to the last if we can reach arrival if we have one, then cut
     def latest_departure(self, start, end):
@@ -111,7 +171,6 @@ class Graph:
                 _, u = heapq.heappop(queue)
                 
                 for e in self.adj[u]:
-                    # e = ('a', 2, 1)
                     v = e[0]
                     weight = e[1]
 
@@ -134,7 +193,13 @@ class Graph:
         n = end_name
         while n:
             path.append(n)
-            n = prev[n]
+            tmp = n.split(",")
+            current = n.split(",")
+            while tmp[0] == current[0]:
+                n = prev[n] 
+                if n == None:
+                    break
+                current = n.split(",") 
         path.reverse()
         
         return path
@@ -166,8 +231,6 @@ class Graph:
                 heapq.heappush(queue, (0, e)) # dist is 0 at the start
                 break # we could take the first
             
-        
-        
         while queue: # while our queue is not empty
             
             # extract the minimum distance of the queue and remove it           
@@ -194,20 +257,26 @@ class Graph:
                     tmp = dist[e]
                     end_name = e
 
-        # Backtracking the path
+        # Backtracking the path and skip useless inter-state of the same node name
         path = []
         
         n = end_name
         while n:
             path.append(n)
-            n = prev[n]
+            tmp = n.split(",")
+            current = n.split(",")
+            while tmp[0] == current[0]:
+                n = prev[n] 
+                if n == None:
+                    break
+                current = n.split(",") 
         path.reverse()
         
         final_dist = None
         if end_name != "":
             final_dist = dist[end_name]
 
-        return final_dist, path
+        return path, final_dist
     
     def add_edge_simplified(self, vertex, to_edge, weight):
         """
