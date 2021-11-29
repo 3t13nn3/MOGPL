@@ -149,7 +149,7 @@ class Graph:
             
             # marking all nodes with inf dist expect for the start node, we don't need lower days nodes
             for e in self.adj:
-                if e[0] == start[0] and e[1] < current_start[1]:
+                if e[0] == start and e[1] < current_start[1]:
                     continue
                 dist[e] = math.inf
 
@@ -202,8 +202,68 @@ class Graph:
     
     # lowest durée(P) = fin(P) - début(P)
     # mix of earliest arrival and latest_departure
+    # Bellman-Ford
     def fastest_path(self, start, end, interval):
-        pass
+        dist = {}
+        prev = {}
+
+        for e in self.adj:
+            if e[0] == start and e[1] >= interval[0]:
+                dist[e] = 0
+                continue
+            dist[e] = math.inf
+        # print(dist)
+        # We loop n-1x through all nodes
+        for i in range (0, len(self.adj) - 1):
+            # to compare them to there childs
+            for u in self.adj:
+                # don't need to check not visited node because we don't know
+                # how to reach them
+                if dist[u] != math.inf:
+                    # for each childs
+                    for e in self.adj[u]:
+                        # print(e[0][1])
+                        #print(u)
+                        v = e[0]
+                        weight = e[0][1]
+                        # relaxation
+                        if dist[v] > dist[u] + (weight - u[1]) and v[1] <= interval[1]:
+                            dist[v] = dist[u] + (weight - u[1])
+                            # keep parents for the path
+                            prev[v] = u
+
+        # picking the lowest dist 
+        tmp = math.inf
+        end_name = None
+        for e in self.adj:
+            if e[0] == end:
+                if dist[e] < tmp:
+                    tmp = dist[e]
+                    end_name = e
+
+        # Backtracking the path and skip useless inter-state of the same node name
+        path = []
+
+        if end_name == None: #if we havent find an arrival
+            return []
+        
+        n = end_name
+        while n:
+            path.append(n)
+            if n[0] == start:
+                break
+            current = n
+            tmp = n
+
+            while tmp[0] == current[0]:
+                n = prev[n] 
+                current = n
+        path.reverse()
+        
+        final_dist = dist[end_name]
+
+        return path, final_dist
+
 
     def shortest_path(self, start, end, interval):
 
@@ -265,10 +325,8 @@ class Graph:
                     break
                 current = n
         path.reverse()
-        
-        final_dist = None
-        if end_name != "":
-            final_dist = dist[end_name]
+    
+        final_dist = dist[end_name]
 
         return path, final_dist
     
