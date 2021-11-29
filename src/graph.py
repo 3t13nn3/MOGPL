@@ -68,18 +68,7 @@ class Graph:
                 print(f" -> {e}")
 
     # Dijkstra but we take the lowest time end node as end
-    def earliest_arrival(self, start, end):
-        # recovering the lower time end node (the first we meet)
-        lower_end = None
-        for e in self.adj:
-            node = e.split(",") # node[0] = a, node[1] = 1
-            if node[0] == end:
-                lower_end = e
-                break
-
-        # if invalid end node
-        if lower_end == None:
-            return []
+    def earliest_arrival(self, start, end, interval):
         
         # then dijkstra to the defined lowest_end
         dist = {}
@@ -88,16 +77,21 @@ class Graph:
         
         for e in self.adj:
             dist[e] = math.inf
-             
+        
+        find_start = False
         for e in self.adj:
-            node = e.split(",") # node[0] = a, node[1] = 1
-            if node[0] == start:
+            if e[0] == start and e[1] >= interval[0]: # check both if the node is the right and if it fit to our interval
                 dist[e] = 0
                 prev[e] = None
                 heapq.heappush(queue, (0, e)) # dist is 0 at the start
+                find_start = True
                 break # we could take the first
 
-        while queue and (dist[lower_end] == math.inf): # while our queue is not empty and we haven't reach our end
+        # if invalid end node
+        if not find_start:
+            return []
+
+        while queue: # while our queue is not empty and we haven't reach our end
             
             # extract the minimum distance of the queue and remove it           
             _, u = heapq.heappop(queue)
@@ -105,8 +99,7 @@ class Graph:
             for e in self.adj[u]:
                 v = e[0]
                 weight = e[1]
-
-                if dist[v] > dist[u] + weight:
+                if dist[v] > dist[u] + weight and v[1] <= interval[1]:
                     # assigning new dist for v node
                     dist[v] = dist[u] + weight
                     heapq.heappush(queue, (dist[v], v))
@@ -116,34 +109,39 @@ class Graph:
         # Backtracking the path
         path = []
 
-        n = lower_end
+        # retrieve the lowest end in time
+        n = None
+        for e in self.adj:
+            if e[0] == end and dist[e] != math.inf:
+                n = e
+                break
+
         while n:
             path.append(n)
-            tmp = n.split(",")
-            current = n.split(",")
+            current = n
+            tmp = n
             while tmp[0] == current[0]:
                 n = prev[n] 
                 if n == None:
                     break
-                current = n.split(",")
+                current = n
         path.reverse()
         
         return path
                 
     
     # Dijkstra from all departure nodes. Test from the bigger to the last if we can reach arrival if we have one, then cut
-    def latest_departure(self, start, end):
+    def latest_departure(self, start, end, interval):
         # recovery all the nodes to start with 
         start_nodes = []
         for e in self.adj:
-            node = e.split(",") # node[0] = a, node[1] = 1
-            if node[0] == start:
+            if e[0] == start and e[1] >= interval[0]: # check both if the node is the right and if it fit to our interval
                 start_nodes.append(e)
 
-        end_name = ""
+        end_name = None
         current_start = None
 
-        while end_name == "" and len(start_nodes) != 0:
+        while end_name == None and len(start_nodes) != 0:
             current_start = start_nodes[-1]
             dist = {}
             prev = {}
@@ -151,9 +149,7 @@ class Graph:
             
             # marking all nodes with inf dist expect for the start node, we don't need lower days nodes
             for e in self.adj:
-                node = e.split(",") # node[0] = a, node[1] = 1
-                start = current_start.split(",")
-                if node[0] == start[0] and int(node[1]) < int(start[1]):
+                if e[0] == start[0] and e[1] < current_start[1]:
                     continue
                 dist[e] = math.inf
 
@@ -164,7 +160,7 @@ class Graph:
 
             # remove the current start from our start list
             start_nodes = start_nodes[:-1]
-                    
+    
             while queue: # while our queue is not empty
                 
                 # extract the minimum distance of the queue and remove it           
@@ -174,7 +170,7 @@ class Graph:
                     v = e[0]
                     weight = e[1]
 
-                    if dist[v] > dist[u] + weight:
+                    if dist[v] > dist[u] + weight and v[1] <= interval[1]: # adding the interval condition
                         # assigning new dist for v node
                         dist[v] = dist[u] + weight
                         heapq.heappush(queue, (dist[v], v))
@@ -183,39 +179,34 @@ class Graph:
             
             # checking if we got a path to our arrival node (if the node dist isn't +inf)
             for e in self.adj:
-                node = e.split(",") # node[0] = a, node[1] = 1
-                if node[0] == end and dist[e] != math.inf:
+                if e[0] == end and dist[e] != math.inf:
                     end_name = e
                     break
                 
         # Backtracking the path
         path = []
         n = end_name
+        
         while n:
             path.append(n)
-            tmp = n.split(",")
-            current = n.split(",")
+            current = n
+            tmp = n
             while tmp[0] == current[0]:
                 n = prev[n] 
                 if n == None:
                     break
-                current = n.split(",") 
+                current = n
         path.reverse()
         
         return path
     
     # lowest durée(P) = fin(P) - début(P)
     # mix of earliest arrival and latest_departure
-    def fastest_path(self, start, end):
+    def fastest_path(self, start, end, interval):
         pass
 
-    def shortest_path(self, start, end):
-        """
-        Complexity in O(E*log(V))
-        V number of vertices
-        E number of edges
-        https://stackoverflow.com/questions/26547816/understanding-time-complexity-calculation-for-dijkstra-algorithm
-        """
+    def shortest_path(self, start, end, interval):
+
         dist = {}
         prev = {}
         queue = []
@@ -224,8 +215,7 @@ class Graph:
             dist[e] = math.inf
              
         for e in self.adj:
-            node = e.split(",") # node[0] = a, node[1] = 1
-            if node[0] == start:
+            if e[0] == start and e[1] >= interval[0]: # check both if the node is the right and if it fit to our interval
                 dist[e] = 0
                 prev[e] = None
                 heapq.heappush(queue, (0, e)) # dist is 0 at the start
@@ -241,35 +231,39 @@ class Graph:
                 v = e[0]
                 weight = e[1]
 
-                if dist[v] > dist[u] + weight:
+                if dist[v] > dist[u] + weight and v[1] <= interval[1]: # adding the interval condition
                     # assigning new dist for v node
                     dist[v] = dist[u] + weight
                     heapq.heappush(queue, (dist[v], v))
                     # keep parent
                     prev[v] = u
         
+        
+        # picking the lowest dist 
         tmp = math.inf
-        end_name = ""
+        end_name = None
         for e in self.adj:
-            node = e.split(",") # node[0] = a, node[1] = 1
-            if node[0] == end:
+            if e[0] == end:
                 if dist[e] < tmp:
                     tmp = dist[e]
                     end_name = e
 
         # Backtracking the path and skip useless inter-state of the same node name
         path = []
+
+        if end_name == None: #if we havent find an arrival
+            return []
         
         n = end_name
         while n:
             path.append(n)
-            tmp = n.split(",")
-            current = n.split(",")
+            current = n
+            tmp = n
             while tmp[0] == current[0]:
                 n = prev[n] 
                 if n == None:
                     break
-                current = n.split(",") 
+                current = n
         path.reverse()
         
         final_dist = None
@@ -321,9 +315,9 @@ class Graph:
                 break
             
             for e in v[k]:
-                g.adj[k + "," + str(e)] = []
+                g.adj[(k, e)] = []
                 if e != first:
-                    g.add_edge_simplified(k + "," + str(tmp), k + "," + str(e), 0)
+                    g.add_edge_simplified((k, tmp), (k, e), 0)
                 tmp = e
         '''
         print(v_in)  
@@ -332,26 +326,24 @@ class Graph:
         '''
         # for all nodes in our new graphs as a,1 a,2 a,3
         for e in g.adj:
-            node = e.split(",") # node[0] = a, node[1] = 1
-
             tmp = ''
             
             # for all decendent of our node in the original graph 'a'
-            for f in self.adj[node[0]]:
+            for f in self.adj[e[0]]:
                 
                 # 'b' or 'c'
                 if tmp != f[0]:
                     #print(f)
                     tmp = f[0]
                     
-                    current_weight = int(node[1])
+                    current_weight = int(e[1])
                     # if the weight of the node exist in v_in of the letter f[0]
                     
                     if current_weight + 1 in v_in[f[0]]:
                         #####CHECK FOR A BETTER SOLUTION
                         v_in[f[0]].remove(current_weight + 1)
 
-                        g.add_edge_simplified(e, f[0] + ',' + str(current_weight + 1), 1)   
+                        g.add_edge_simplified(e, (f[0], current_weight + 1), 1)   
         
         return g
         
