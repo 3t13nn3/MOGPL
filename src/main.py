@@ -14,9 +14,9 @@ if __name__ == "__main__":
     
     g2 = g.create_simplified()
     
-    # g2.print()
+    g2.print()
     start = 'a'
-    end = 'l'
+    end = 'k'
     interval = [1,10]
 
     print("-   -   -   -   -   -   -")

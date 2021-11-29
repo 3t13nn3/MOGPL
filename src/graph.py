@@ -351,8 +351,11 @@ class Graph:
             # k = a, b ,c ....
             for e in self.adj[k]:
                 # ('b', 2, 1)   
-                # print(e[1])
-                v_in[e[0]].add(e[1] + 1)
+                # print(e[0], e[1], e[2])
+
+                #MODIF LAMBDA
+                # v_in[e[0]].add(e[1] + 1)
+                v_in[e[0]].add(e[1] + e[2])
                 v_out[k].add(e[1])  
 
         
@@ -394,6 +397,8 @@ class Graph:
                     #print(f)
                     tmp = f[0]
                     
+                    '''
+                    LAMBDA MODIF
                     current_weight = int(e[1])
                     # if the weight of the node exist in v_in of the letter f[0]
                     
@@ -401,7 +406,16 @@ class Graph:
                         #####CHECK FOR A BETTER SOLUTION
                         v_in[f[0]].remove(current_weight + 1)
 
-                        g.add_edge_simplified(e, (f[0], current_weight + 1), 1)   
+                        g.add_edge_simplified(e, (f[0], current_weight + 1), 1)
+                    '''
+                    current_weight = e[1] + f[2]
+                    # if the weight of the node exist in v_in of the letter f[0]
+                    #print(current_weight)
+                    if current_weight in v_in[f[0]]:
+                        #####CHECK FOR A BETTER SOLUTION
+                        v_in[f[0]].remove(current_weight)
+
+                        g.add_edge_simplified(e, (f[0], current_weight), 1)   
         
         return g
         
