@@ -67,77 +67,47 @@ class Graph:
             for e in self.adj[k]:
                 print(f" -> {e}")
 
-    def _dijkstra(self, start, end, dist, prev, possible_end):
-
+    # Dijkstra but we take the lowest time end node as end
+    def earliest_arrival(self, start, end, interval):
+        
+        # then dijkstra to the defined lowest_end
+        dist = {}
+        prev = {}
         queue = []
-        possible_end = []
-
+        
         for e in self.adj:
             dist[e] = math.inf
+        
+        find_start = False
+        for e in self.adj:
+            if e[0] == start and e[1] >= interval[0]: # check both if the node is the right and if it fit to our interval
+                dist[e] = 0
+                prev[e] = None
+                heapq.heappush(queue, (0, e)) # dist is 0 at the start
+                find_start = True
+                break # we could take the first
 
-        dist[start] = 0
+        # if invalid end node
+        if not find_start:
+            return []
 
-        heapq.heappush(queue, (0, start))
-
-        # check if queue is empty or if all targeted end nodes have been browsed and dist marked
-        while queue or not all(dist[e] != math.inf for e in possible_end):
+        while queue: # while our queue is not empty and we haven't reach our end
             
             # extract the minimum distance of the queue and remove it           
             _, u = heapq.heappop(queue)
-
+               
             for e in self.adj[u]:
                 v = e[0]
                 weight = e[1]
-                
-                if dist[v] > dist[u] + weight:
+                if dist[v] > dist[u] + weight and v[1] <= interval[1]:
                     # assigning new dist for v node
                     dist[v] = dist[u] + weight
                     heapq.heappush(queue, (dist[v], v))
                     # keep parent
                     prev[v] = u
 
-
-    def _back_tracking(self, node, prev):
+        # Backtracking the path
         path = []
-
-       # if node == None: #if we havent find an arrival
-        #    return []
-        while node:
-            path.append(node)
-            current = node
-            tmp = node
-            while tmp[0] == current[0]:
-                node = prev[node] 
-                if node == None:
-                    break
-                current = node
-        path.reverse()
-
-        return path
-
-    # Dijkstra but we take the lowest time end node as end
-    def earliest_arrival(self, start, end):
-        
-        dist = {}
-        prev = {}
-        possible_end = []
-
-        # Fidning the start node
-        current_start = None
-        for e in self.adj:
-            if e[0] == start: # check both if the node is the right
-                current_start = e
-                prev[e] = None
-                break # we could take the first
-        
-        if not current_start:
-            return []
-
-        for e in self.adj:
-            if e[0] == end:
-                possible_end.append(e)
-
-        self._dijkstra(current_start, end, dist, prev, possible_end)
 
         # retrieve the lowest end in time
         n = None
@@ -145,56 +115,104 @@ class Graph:
             if e[0] == end and dist[e] != math.inf:
                 n = e
                 break
+
+        while n:
+            path.append(n)
+            current = n
+            tmp = n
+            while tmp[0] == current[0]:
+                n = prev[n] 
+                if n == None:
+                    break
+                current = n
+        path.reverse()
         
-        return self._back_tracking(n, prev)
+        return path
                 
     
     # Dijkstra from all departure nodes. Test from the bigger to the last if we can reach arrival if we have one, then cut
-    def latest_departure(self, start, end):
+    def latest_departure(self, start, end, interval):
         # recovery all the nodes to start with 
         start_nodes = []
         for e in self.adj:
-            if e[0] == start: # check if the node is the right
+            if e[0] == start and e[1] >= interval[0]: # check both if the node is the right and if it fit to our interval
                 start_nodes.append(e)
 
         end_name = None
         current_start = None
 
-        # keep the end we wan reach
-        possible_end = []
-        prev = {}
-
         while end_name == None and len(start_nodes) != 0:
             current_start = start_nodes[-1]
-            possible_end.append(current_start)
-            # remove the current start from our start list
-            start_nodes = start_nodes[:-1]
             dist = {}
             prev = {}
+            queue = []
+            
+            # marking all nodes with inf dist expect for the start node, we don't need lower days nodes
+            for e in self.adj:
+                if e[0] == start and e[1] < current_start[1]:
+                    continue
+                dist[e] = math.inf
+
+            
+            dist[current_start] = 0
             prev[current_start] = None
-            self._dijkstra(current_start, end, dist, prev, possible_end)
+            heapq.heappush(queue, (0, current_start))
+
+            # remove the current start from our start list
+            start_nodes = start_nodes[:-1]
+    
+            while queue: # while our queue is not empty
+                
+                # extract the minimum distance of the queue and remove it           
+                _, u = heapq.heappop(queue)
+                
+                for e in self.adj[u]:
+                    v = e[0]
+                    weight = e[1]
+
+                    if dist[v] > dist[u] + weight and v[1] <= interval[1]: # adding the interval condition
+                        # assigning new dist for v node
+                        dist[v] = dist[u] + weight
+                        heapq.heappush(queue, (dist[v], v))
+                        # keep parent
+                        prev[v] = u
             
             # checking if we got a path to our arrival node (if the node dist isn't +inf)
             for e in self.adj:
                 if e[0] == end and dist[e] != math.inf:
                     end_name = e
                     break
+                
+        # Backtracking the path
+        path = []
+        n = end_name
         
-        return self._back_tracking(end_name, prev)
+        while n:
+            path.append(n)
+            current = n
+            tmp = n
+            while tmp[0] == current[0]:
+                n = prev[n] 
+                if n == None:
+                    break
+                current = n
+        path.reverse()
+        
+        return path
     
     # lowest durée(P) = fin(P) - début(P)
     # mix of earliest arrival and latest_departure
     # Bellman-Ford
-    def fastest_path(self, start, end):
+    def fastest_path(self, start, end, interval):
         dist = {}
         prev = {}
 
         for e in self.adj:
-            if e[0] == start:
+            if e[0] == start and e[1] >= interval[0]:
                 dist[e] = 0
                 continue
             dist[e] = math.inf
-
+        # print(dist)
         # We loop n-1x through all nodes
         for i in range (0, len(self.adj) - 1):
             # to compare them to there childs
@@ -209,7 +227,7 @@ class Graph:
                         v = e[0]
                         weight = e[0][1]
                         # relaxation
-                        if dist[v] > dist[u] + (weight - u[1]):
+                        if dist[v] > dist[u] + (weight - u[1]) and v[1] <= interval[1]:
                             dist[v] = dist[u] + (weight - u[1])
                             # keep parents for the path
                             prev[v] = u
@@ -247,29 +265,40 @@ class Graph:
         return path, final_dist
 
 
-    def shortest_path(self, start, end):
+    def shortest_path(self, start, end, interval):
 
         dist = {}
         prev = {}
-        possible_end = []
-
-        # Fidning the start node
-        current_start = None
+        queue = []
+        
         for e in self.adj:
-            if e[0] == start: # check both if the node is the right
-                current_start = e
+            dist[e] = math.inf
+             
+        for e in self.adj:
+            if e[0] == start and e[1] >= interval[0]: # check both if the node is the right and if it fit to our interval
+                dist[e] = 0
                 prev[e] = None
+                heapq.heappush(queue, (0, e)) # dist is 0 at the start
                 break # we could take the first
-        
-        if not current_start:
-            return []
-        
-        for e in self.adj:
-            if e[0] == end:
-                possible_end.append(e)
+            
+        while queue: # while our queue is not empty
+            
+            # extract the minimum distance of the queue and remove it           
+            _, u = heapq.heappop(queue)
+               
+            for e in self.adj[u]:
+                # e = ('a', 2, 1)
+                v = e[0]
+                weight = e[1]
 
-        self._dijkstra(current_start, end, dist, prev, possible_end)
-
+                if dist[v] > dist[u] + weight and v[1] <= interval[1]: # adding the interval condition
+                    # assigning new dist for v node
+                    dist[v] = dist[u] + weight
+                    heapq.heappush(queue, (dist[v], v))
+                    # keep parent
+                    prev[v] = u
+        
+        
         # picking the lowest dist 
         tmp = math.inf
         end_name = None
@@ -279,12 +308,27 @@ class Graph:
                     tmp = dist[e]
                     end_name = e
 
-        if not end_name:
-            return []
+        # Backtracking the path and skip useless inter-state of the same node name
+        path = []
 
+        if end_name == None: #if we havent find an arrival
+            return []
+        
+        n = end_name
+        while n:
+            path.append(n)
+            current = n
+            tmp = n
+            while tmp[0] == current[0]:
+                n = prev[n] 
+                if n == None:
+                    break
+                current = n
+        path.reverse()
+    
         final_dist = dist[end_name]
 
-        return self._back_tracking(end_name, prev), final_dist
+        return path, final_dist
     
     def add_edge_simplified(self, vertex, to_edge, weight):
         """
@@ -292,7 +336,7 @@ class Graph:
         """
         self.adj[vertex].append((to_edge, weight))
         
-    def create_simplified(self, interval):
+    def create_simplified(self):
         g = Graph()
         v_in = {}
         v_out = {}
@@ -302,25 +346,23 @@ class Graph:
             # using set for unicity (we don't want multiple time the same departur date)
             v_out[e] = set()
             v_in[e] = set()
-
+        
         for k in self.adj:
             # k = a, b ,c ....
             for e in self.adj[k]:
-                
                 # ('b', 2, 1)   
-                print(e[0], e[1], e[2])
+                # print(e[0], e[1], e[2])
 
                 #MODIF LAMBDA
                 # v_in[e[0]].add(e[1] + 1)
-                if (e[1]) >= interval[0] and (e[1] + e[2]) <= interval[1]:
-                    v_in[e[0]].add(e[1] + e[2])
-                    v_out[k].add(e[1])  
+                v_in[e[0]].add(e[1] + e[2])
+                v_out[k].add(e[1])  
 
         
         for k in v_in:
             v[k] = set()
-            #while len(v_in[k]) != 0 and len(v_out[k]) != 0 and min(v_in[k]) > min(v_out[k]):
-            #    v_out[k].remove(min(v_out[k]))
+            while len(v_in[k]) != 0 and len(v_out[k]) != 0 and min(v_in[k]) > min(v_out[k]):
+                v_out[k].remove(min(v_out[k]))
                         
             v[k] = sorted(v_in[k].union(v_out[k]))
             
@@ -338,7 +380,11 @@ class Graph:
                 if e != first:
                     g.add_edge_simplified((k, tmp), (k, e), 0)
                 tmp = e
-
+        '''
+        print(v_in)  
+        print(v_out)
+        print(v)
+        '''
         # for all nodes in our new graphs as a,1 a,2 a,3
         for e in g.adj:
             tmp = ''
