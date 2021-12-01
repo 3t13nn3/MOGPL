@@ -67,7 +67,7 @@ class Graph:
             for e in self.adj[k]:
                 print(f" -> {e}")
 
-    def _dijkstra(self, start, end, dist, prev, possible_end):
+    def _dijkstra(self, start, dist, prev, possible_end):
 
         queue = []
         possible_end = []
@@ -96,13 +96,13 @@ class Graph:
                     # keep parent
                     prev[v] = u
 
-
     def _back_tracking(self, node, prev):
         path = []
 
        # if node == None: #if we havent find an arrival
         #    return []
         while node:
+            #print(node)
             path.append(node)
             current = node
             tmp = node
@@ -137,7 +137,7 @@ class Graph:
             if e[0] == end:
                 possible_end.append(e)
 
-        self._dijkstra(current_start, end, dist, prev, possible_end)
+        self._dijkstra(current_start, dist, prev, possible_end)
 
         # retrieve the lowest end in time
         n = None
@@ -172,7 +172,7 @@ class Graph:
             dist = {}
             prev = {}
             prev[current_start] = None
-            self._dijkstra(current_start, end, dist, prev, possible_end)
+            self._dijkstra(current_start, dist, prev, possible_end)
             
             # checking if we got a path to our arrival node (if the node dist isn't +inf)
             for e in self.adj:
@@ -192,6 +192,7 @@ class Graph:
         for e in self.adj:
             if e[0] == start:
                 dist[e] = 0
+                prev[e] = None
                 continue
             dist[e] = math.inf
 
@@ -223,25 +224,14 @@ class Graph:
                     tmp = dist[e]
                     end_name = e
 
-        # Backtracking the path and skip useless inter-state of the same node name
-        path = []
+
 
         if end_name == None: #if we havent find an arrival
             return []
         
-        n = end_name
-        while n:
-            path.append(n)
-            if n[0] == start:
-                break
-            current = n
-            tmp = n
+        # Backtracking the path and skip useless inter-state of the same node name
+        path = self._back_tracking(end_name, prev)
 
-            while tmp[0] == current[0]:
-                n = prev[n] 
-                current = n
-        path.reverse()
-        
         final_dist = dist[end_name]
 
         return path, final_dist
@@ -268,7 +258,7 @@ class Graph:
             if e[0] == end:
                 possible_end.append(e)
 
-        self._dijkstra(current_start, end, dist, prev, possible_end)
+        self._dijkstra(current_start, dist, prev, possible_end)
 
         # picking the lowest dist 
         tmp = math.inf
