@@ -18,8 +18,7 @@ if __name__ == "__main__":
     #g2.print()
     start = '0'
     end = '1086'
-    #start = 'a'
-    #end = 'g'
+
 
     
     print("-   -   -   -   -   -   -")
@@ -41,5 +40,6 @@ if __name__ == "__main__":
     stime = time.time()
     print("\x1b[1m\x1b[36mShortest Path:\t\t> ", g2.shortest_path(start, end))
     etime = time.time()
+    print(etime-stime)
     
     print("\x1b[0m-   -   -   -   -   -   -")

@@ -167,8 +167,7 @@ class Graph:
         dist = {}
         prev = {}
 
-        
-        self.__dijkstra(start, end, dist, prev)
+        self.__BFS(start, end, dist, prev)
 
         if end not in dist:
             return []
@@ -192,7 +191,10 @@ class Graph:
         self.__BFS(start, end, dist, prev)
 
         path = [(0,-1)]
-        
+
+        if end not in dist:
+            return []
+
         for e in dist[end]:    
             #recovery name to pass to previous
             end_name = (end, e)
@@ -217,6 +219,9 @@ class Graph:
         prev = {}
 
         self.__BFS(start, end, dist, prev)
+
+        if end not in dist:
+            return []
 
         end_name = (end, min(dist[end], key=dist[end].get))
 
