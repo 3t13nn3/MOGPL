@@ -10,9 +10,9 @@ class Graph:
     """
 
     def __init__(self):
-        self.adj = {}
-        self.nb_vertices = 0
-        self.nb_edges = 0
+        self.__adj = {}
+        self.__nb_vertices = 0
+        self.__nb_edges = 0
     
     def create_from_file(self, file_name):
         """
@@ -26,77 +26,94 @@ class Graph:
                 lines.append(l.rstrip()) # .rstrip() to remove \n
 
         # Set numbers of components
-        self.nb_vertices = int(lines[0])
-        self.nb_edges = int(lines[1])
+        self.__nb_vertices = int(lines[0])
+        self.__nb_edges = int(lines[1])
 
         # Adding vertices into our adj
-        for v in lines[2:(2 + self.nb_vertices)]:
-            self.adj[v] = []
+        for v in lines[2:(2 + self.__nb_vertices)]:
+            self.__adj[v] = []
 
         # Adding edges into our adj
-        for l in lines[(2 + self.nb_vertices):(2 + self.nb_vertices) + self.nb_edges + 1]:
+        for l in lines[(2 + self.__nb_vertices):(2 + self.__nb_vertices) + self.__nb_edges + 1]:
             to_split = l.split(",") # parse lines
-            self.add_edge(to_split[0][1:], to_split[1], int(to_split[2]), int(to_split[3][:-1]))
+            self.__add_edge(to_split[0][1:], to_split[1], int(to_split[2]), int(to_split[3][:-1]))
     
     def create_manually(self):
         """
         Asking the user to build the graph himself from the prompt.
         """
-        self.nb_vertices = int(input("Enter the number of vertices: "))
-        self.nb_edges = int(input("Enter the number of edge: "))
+        self.__nb_vertices = int(input("Enter the number of vertices: "))
+        self.__nb_edges = int(input("Enter the number of edge: "))
 
-        for i in range(self.nb_vertices):
-            v = input(f"Enter the name of the vertex number {i+1}/{self.nb_vertices}: ")
-            self.adj[v] = []
+        for i in range(self.__nb_vertices):
+            v = input(f"Enter the name of the vertex number {i+1}/{self.__nb_vertices}: ")
+            self.__adj[v] = []
         
-        for i in range(self.nb_edges):
-            l = input("Enter the edge number %d/%d (as: u v t lambda) : " % (i+1, self.nb_edges))
+        for i in range(self.__nb_edges):
+            l = input("Enter the edge number %d/%d (as: u v t lambda) : " % (i+1, self.__nb_edges))
             to_split = l.split(" ") # parse lines
-            self.add_edge(to_split[0], to_split[1], int(to_split[2]), int(to_split[3]))
+            self.__add_edge(to_split[0], to_split[1], int(to_split[2]), int(to_split[3]))
 
-    def add_edge(self, vertex, to_edge, start_time, arrival_time):
+    def __add_edge(self, vertex, to_edge, start_time, arrival_time):
         """
         Putting an edge into our adjacent list which is a dictionnary.
         The vertex is a key, and it value is [the dest vertex, the start time, the end time].
         """
-        self.adj[vertex].append((to_edge, start_time, arrival_time))
+        self.__adj[vertex].append((to_edge, start_time, arrival_time))
 
     def print(self):
-        for k in self.adj:
+        for k in self.__adj:
             print(f"{k}:")
-            for e in self.adj[k]:
+            for e in self.__adj[k]:
                 print(f" -> {e}")
 
-    def _dijkstra(self, start, dist, prev, possible_end):
+    def __dijkstra(self, start, end, dist, prev):
+        
+        current_start = None
+        start_find = False
+        for e in self.__adj:
+            if not e[0] in dist:
+                dist[e[0]] = {}
+            if e[0] == start and not start_find:
+                dist[e[0]][e[1]] = 0
+                prev[e] = None
+                current_start = e
+                start_find = True
+            else:
+                dist[e[0]][e[1]] = math.inf
+
+        possible_end = []
+        
+        if not current_start:
+            return []
+
+        for e in self.__adj:
+            if e[0] == end:
+                possible_end.append(e)
 
         queue = []
-        possible_end = []
 
-        for e in self.adj:
-            dist[e] = math.inf
+        dist[current_start] = 0
 
-        dist[start] = 0
-
-        heapq.heappush(queue, (0, start))
-
+        heapq.heappush(queue, (0, current_start))
         # check if queue is empty or if all targeted end nodes have been browsed and dist marked
-        while queue or not all(dist[e] != math.inf for e in possible_end):
-            
+        while queue:
+            if all(dist[end][e] != math.inf for e in dist[end]):
+                break
             # extract the minimum distance of the queue and remove it           
             _, u = heapq.heappop(queue)
-
-            for e in self.adj[u]:
-                v = e[0]
+            for e in self.__adj[u]:
+                v = e
                 weight = e[1]
                 
-                if dist[v] > dist[u] + weight:
+                if dist[v[0][0]][v[0][1]] > dist[u[0]][u[1]] + weight:
                     # assigning new dist for v node
-                    dist[v] = dist[u] + weight
-                    heapq.heappush(queue, (dist[v], v))
+                    dist[v[0][0]][v[0][1]] = dist[u[0]][u[1]] + weight
+                    heapq.heappush(queue, (dist[v[0][0]][v[0][1]], v[0]))
                     # keep parent
-                    prev[v] = u
+                    prev[v[0]] = u
 
-    def _back_tracking(self, node, prev):
+    def __back_tracking(self, node, prev):
         path = []
 
        # if node == None: #if we havent find an arrival
@@ -120,119 +137,111 @@ class Graph:
         
         dist = {}
         prev = {}
-        possible_end = []
 
-        # Fidning the start node
-        current_start = None
-        for e in self.adj:
-            if e[0] == start: # check both if the node is the right
-                current_start = e
-                prev[e] = None
-                break # we could take the first
-        
-        if not current_start:
+        self.__dijkstra(start, end, dist, prev)
+
+        if end not in dist:
             return []
-
-        for e in self.adj:
-            if e[0] == end:
-                possible_end.append(e)
-
-        self._dijkstra(current_start, dist, prev, possible_end)
 
         # retrieve the lowest end in time
         n = None
-        for e in self.adj:
-            if e[0] == end and dist[e] != math.inf:
-                n = e
+        for e in dist[end]:
+            if dist[end][e] != math.inf:
+                n = (end, e)
                 break
         
-        return self._back_tracking(n, prev)
+        return self.__back_tracking(n, prev)
                 
     
-    # Dijkstra from all departure nodes. Test from the bigger to the last if we can reach arrival if we have one, then cut
+    # BFS 
     def latest_departure(self, start, end):
-        # recovery all the nodes to start with 
-        start_nodes = []
-        for e in self.adj:
-            if e[0] == start: # check if the node is the right
-                start_nodes.append(e)
-
-        end_name = None
-        current_start = None
-
-        # keep the end we wan reach
-        possible_end = []
+        dist = {}
         prev = {}
-
-        while end_name == None and len(start_nodes) != 0:
-            current_start = start_nodes[-1]
-            possible_end.append(current_start)
-            # remove the current start from our start list
-            start_nodes = start_nodes[:-1]
-            dist = {}
-            prev = {}
-            prev[current_start] = None
-            self._dijkstra(current_start, dist, prev, possible_end)
             
-            # checking if we got a path to our arrival node (if the node dist isn't +inf)
-            for e in self.adj:
-                if e[0] == end and dist[e] != math.inf:
-                    end_name = e
-                    break
-        
-        return self._back_tracking(end_name, prev)
+        for e in self.__adj:
+            if not e[0] in dist:
+                dist[e[0]] = {}
+            if e[0] == start:
+                dist[e[0]][e[1]] = 0
+                prev[e] = None
+                continue
+            dist[e[0]][e[1]] = math.inf
+
+        if not end in dist:
+            return []
+                
+        for u in self.__adj:
+            # don't need to check not visited node because we don't know
+            # how to reach them
+            if dist[u[0]][u[1]] != math.inf:
+                # for each childs
+                for e in self.__adj[u]:
+                    v = e
+                    weight = e[0][1]
+                    # relaxation
+                    if dist[v[0][0]][v[0][1]] > dist[u[0]][u[1]] + (weight - u[1]):
+                        dist[v[0][0]][v[0][1]] = dist[u[0]][u[1]] + (weight - u[1])
+                        # keep parents for the path
+                        prev[v[0]] = u
+
+                       
+
+        path = [(0,0)]
+        #print(prev)
+        for e in dist[end]:    
+            #recovery name to pass to previous
+            end_name = (end, e)
+            
+            if dist[end][end_name[1]] != math.inf:       
+                tmp = self.__back_tracking(end_name, prev)
+                if tmp[0][1] > path[0][1]:
+                    path = tmp
+                # checking if we can arrive earlier with the current start
+                elif path == tmp[0][1]:
+                    if tmp[-1][1] > path[-1][1]:
+                        path = tmp
+
+        if path == [(0,0)]:
+            return []
+
+        return path
     
-    # lowest durée(P) = fin(P) - début(P)
-    # mix of earliest arrival and latest_departure
-    # Bellman-Ford
+    # BFS
     def fastest_path(self, start, end):
         dist = {}
         prev = {}
 
-        for e in self.adj:
+        for e in self.__adj:
+            if not e[0] in dist:
+                dist[e[0]] = {}
             if e[0] == start:
-                dist[e] = 0
+                dist[e[0]][e[1]] = 0
                 prev[e] = None
                 continue
-            dist[e] = math.inf
+            dist[e[0]][e[1]] = math.inf
 
-        # We loop n-1x through all nodes
-        for i in range (0, len(self.adj) - 1):
-            # to compare them to there childs
-            for u in self.adj:
-                # don't need to check not visited node because we don't know
-                # how to reach them
-                if dist[u] != math.inf:
-                    # for each childs
-                    for e in self.adj[u]:
-                        # print(e[0][1])
-                        #print(u)
-                        v = e[0]
-                        weight = e[0][1]
-                        # relaxation
-                        if dist[v] > dist[u] + (weight - u[1]):
-                            dist[v] = dist[u] + (weight - u[1])
-                            # keep parents for the path
-                            prev[v] = u
-
-        # picking the lowest dist 
-        tmp = math.inf
-        end_name = None
-        for e in self.adj:
-            if e[0] == end:
-                if dist[e] < tmp:
-                    tmp = dist[e]
-                    end_name = e
-
-
-
-        if end_name == None: #if we havent find an arrival
+        if not end in dist:
             return []
+
+        for u in self.__adj:
+            # don't need to check not visited node because we don't know
+            # how to reach them
+            if dist[u[0]][u[1]] != math.inf:
+                # for each childs
+                for e in self.__adj[u]:
+                    v = e
+                    weight = e[0][1]
+                    # relaxation
+                    if dist[v[0][0]][v[0][1]] > dist[u[0]][u[1]] + (weight - u[1]):
+                        dist[v[0][0]][v[0][1]] = dist[u[0]][u[1]] + (weight - u[1])
+                        # keep parents for the path
+                        prev[v[0]] = u
+
+        end_name = (end, min(dist[end], key=dist[end].get))
         
         # Backtracking the path and skip useless inter-state of the same node name
-        path = self._back_tracking(end_name, prev)
-
-        final_dist = dist[end_name]
+        path = self.__back_tracking(end_name, prev)
+        final_dist = dist[end][end_name[1]]
 
         return path, final_dist
 
@@ -241,46 +250,25 @@ class Graph:
 
         dist = {}
         prev = {}
-        possible_end = []
-
-        # Fidning the start node
-        current_start = None
-        for e in self.adj:
-            if e[0] == start: # check both if the node is the right
-                current_start = e
-                prev[e] = None
-                break # we could take the first
         
-        if not current_start:
+
+        self.__dijkstra(start, end, dist, prev)
+
+        if end not in dist:
             return []
-        
-        for e in self.adj:
-            if e[0] == end:
-                possible_end.append(e)
-
-        self._dijkstra(current_start, dist, prev, possible_end)
-
+            
         # picking the lowest dist 
-        tmp = math.inf
-        end_name = None
-        for e in self.adj:
-            if e[0] == end:
-                if dist[e] < tmp:
-                    tmp = dist[e]
-                    end_name = e
+        end_name = (end, min(dist[end], key=dist[end].get))
 
-        if not end_name:
-            return []
+        final_dist = dist[end][end_name[1]]
 
-        final_dist = dist[end_name]
-
-        return self._back_tracking(end_name, prev), final_dist
+        return self.__back_tracking(end_name, prev), final_dist
     
-    def add_edge_simplified(self, vertex, to_edge, weight):
+    def __add_edge_simplified(self, vertex, to_edge, weight):
         """
         Same method as above wityh only a weight
         """
-        self.adj[vertex].append((to_edge, weight))
+        self.__adj[vertex].append((to_edge, weight))
         
     def create_simplified(self, interval):
         g = Graph()
@@ -288,17 +276,17 @@ class Graph:
         v_out = {}
         v = {}
         
-        for e in self.adj:
+        for e in self.__adj:
             # using set for unicity (we don't want multiple time the same departur date)
             v_out[e] = set()
             v_in[e] = set()
 
-        for k in self.adj:
+        for k in self.__adj:
             # k = a, b ,c ....
-            for e in self.adj[k]:
+            for e in self.__adj[k]:
                 
                 # ('b', 2, 1)   
-                print(e[0], e[1], e[2])
+                # print(e[0], e[1], e[2])
 
                 #MODIF LAMBDA
                 # v_in[e[0]].add(e[1] + 1)
@@ -309,13 +297,8 @@ class Graph:
         
         for k in v_in:
             v[k] = set()
-            #while len(v_in[k]) != 0 and len(v_out[k]) != 0 and min(v_in[k]) > min(v_out[k]):
-            #    v_out[k].remove(min(v_out[k]))
-                        
             v[k] = sorted(v_in[k].union(v_out[k]))
-            
-            #print(v[k])
-            
+
             tmp = None
             # get first element of the set
             first = None
@@ -324,42 +307,24 @@ class Graph:
                 break
             
             for e in v[k]:
-                g.adj[(k, e)] = []
+                g.__adj[(k, e)] = []
                 if e != first:
-                    g.add_edge_simplified((k, tmp), (k, e), 0)
+                    g.__add_edge_simplified((k, tmp), (k, e), 0)
                 tmp = e
 
         # for all nodes in our new graphs as a,1 a,2 a,3
-        for e in g.adj:
+        for e in g.__adj:
             tmp = ''
-            
             # for all decendent of our node in the original graph 'a'
-            for f in self.adj[e[0]]:
-                
+            for f in self.__adj[e[0]]:  
                 # 'b' or 'c'
                 if tmp != f[0]:
-                    #print(f)
                     tmp = f[0]
-                    
-                    '''
-                    LAMBDA MODIF
-                    current_weight = int(e[1])
-                    # if the weight of the node exist in v_in of the letter f[0]
-                    
-                    if current_weight + 1 in v_in[f[0]]:
-                        #####CHECK FOR A BETTER SOLUTION
-                        v_in[f[0]].remove(current_weight + 1)
-
-                        g.add_edge_simplified(e, (f[0], current_weight + 1), 1)
-                    '''
                     current_weight = e[1] + f[2]
                     # if the weight of the node exist in v_in of the letter f[0]
-                    #print(current_weight)
                     if current_weight in v_in[f[0]]:
-                        #####CHECK FOR A BETTER SOLUTION
                         v_in[f[0]].remove(current_weight)
-
-                        g.add_edge_simplified(e, (f[0], current_weight), 1)   
+                        g.__add_edge_simplified(e, (f[0], current_weight), 1)   
         
         return g
         
