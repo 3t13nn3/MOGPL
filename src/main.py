@@ -16,8 +16,8 @@ if __name__ == "__main__":
     g2 = g.create_simplified(interval)
     
     #g2.print()
-    start = '0'
-    end = '1086'
+    start = 'a'
+    end = 'f'
 
 
     

@@ -128,6 +128,8 @@ class Graph:
             return []
 
         for u in self.__adj:
+            if all(dist[end][e] != math.inf for e in dist[end]):
+                break
             # don't need to check not visited node because we don't know
             # how to reach them
             if dist[u[0]][u[1]] != math.inf:
