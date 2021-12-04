@@ -67,51 +67,34 @@ class Graph:
             for e in self.__adj[k]:
                 print(f" -> {e}")
 
-    def __dijkstra(self, start, end, dist, prev):
-        
-        current_start = None
-        start_find = False
-        for e in self.__adj:
-            if not e[0] in dist:
-                dist[e[0]] = {}
-            if e[0] == start and not start_find:
-                dist[e[0]][e[1]] = 0
-                prev[e] = None
-                current_start = e
-                start_find = True
-            else:
-                dist[e[0]][e[1]] = math.inf
-
-        possible_end = []
-        
-        if not current_start:
-            return []
-
-        for e in self.__adj:
-            if e[0] == end:
-                possible_end.append(e)
+    def __dijkstra(self, start, dist, prev, possible_end):
 
         queue = []
+        possible_end = []
 
-        dist[current_start] = 0
+        for e in self.adj:
+            dist[e] = math.inf
 
-        heapq.heappush(queue, (0, current_start))
+        dist[start] = 0
+
+        heapq.heappush(queue, (0, start))
+
         # check if queue is empty or if all targeted end nodes have been browsed and dist marked
-        while queue:
-            if all(dist[end][e] != math.inf for e in dist[end]):
-                break
+        while queue or not all(dist[e] != math.inf for e in possible_end):
+            
             # extract the minimum distance of the queue and remove it           
             _, u = heapq.heappop(queue)
+
             for e in self.__adj[u]:
-                v = e
+                v = e[0]
                 weight = e[1]
                 
-                if dist[v[0][0]][v[0][1]] > dist[u[0]][u[1]] + weight:
+                if dist[v] > dist[u] + weight:
                     # assigning new dist for v node
-                    dist[v[0][0]][v[0][1]] = dist[u[0]][u[1]] + weight
-                    heapq.heappush(queue, (dist[v[0][0]][v[0][1]], v[0]))
+                    dist[v] = dist[u] + weight
+                    heapq.heappush(queue, (dist[v], v))
                     # keep parent
-                    prev[v[0]] = u
+                    prev[v] = u
 
     def __back_tracking(self, node, prev):
         path = []
@@ -248,17 +231,38 @@ class Graph:
 
         dist = {}
         prev = {}
+        possible_end = []
+
+        # Fidning the start node
+        current_start = None
+        for e in self.adj:
+            if e[0] == start: # check both if the node is the right
+                current_start = e
+                prev[e] = None
+                break # we could take the first
         
-
-        self.__dijkstra(start, end, dist, prev)
-
-        if end not in dist:
+        if not current_start:
             return []
-            
-        # picking the lowest dist 
-        end_name = (end, min(dist[end], key=dist[end].get))
+        
+        for e in self.__adj:
+            if e[0] == end:
+                possible_end.append(e)
 
-        final_dist = dist[end][end_name[1]]
+        self._dijkstra(current_start, dist, prev, possible_end)
+
+        # picking the lowest dist 
+        tmp = math.inf
+        end_name = None
+        for e in self.adj:
+            if e[0] == end:
+                if dist[e] < tmp:
+                    tmp = dist[e]
+                    end_name = e
+
+        if not end_name:
+            return []
+
+        final_dist = dist[end_name]
 
         return self.__back_tracking(end_name, prev), final_dist
     

@@ -12,19 +12,20 @@ if __name__ == "__main__":
         g.create_from_file(sys.argv[1])
     
     interval = [0,1000000000]
-
+    # g.print()
     g2 = g.create_simplified(interval)
     
-    # g2.print()
-    #start = '0'
-    #end = '999999'
-    start = 'a'
-    end = 'l'
+    #g2.print()
+    start = '0'
+    end = '1086'
+    #start = 'a'
+    #end = 'g'
 
-
+    
     print("-   -   -   -   -   -   -")
     print(f"\x1b[1m\x1b[32mStart: \'{start}\'\x1b[0m | \x1b[1m\x1b[31mEnd \'{end}\'\x1b[0m | On the interval \x1b[1m{interval}\x1b[0m:")
     print("-   -   -   -   -   -   -")
+
     stime = time.time()
     print("\x1b[1m\x1b[33mEarliest Arrival:\t> ", g2.earliest_arrival(start, end))
     etime = time.time()
@@ -40,5 +41,5 @@ if __name__ == "__main__":
     stime = time.time()
     print("\x1b[1m\x1b[36mShortest Path:\t\t> ", g2.shortest_path(start, end))
     etime = time.time()
-    print(etime-stime)
+    
     print("\x1b[0m-   -   -   -   -   -   -")
