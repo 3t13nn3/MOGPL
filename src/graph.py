@@ -57,17 +57,24 @@ class Graph:
     def __add_edge(self, vertex, to_edge, start_time, arrival_time):
         """
         Putting an edge into our adjacent list which is a dictionnary.
-        The vertex is a key, and it value is [the dest vertex, the start time, the end time].
+        The vertex is a key, and it value is (the dest vertex, the start time, the end time).
         """
         self.__adj[vertex].append((to_edge, start_time, arrival_time))
 
     def print(self):
+        """
+        Print the graph into the term.
+        """
         for k in self.__adj:
             print(f"{k}:")
             for e in self.__adj[k]:
                 print(f" -> {e}")
 
     def __dijkstra(self, start, end, dist, prev):
+        """
+        Using dict instead of list for stocking distances and previous nodes. Gain of time by this struct.
+        Using a priority queue to add the fastest implementation of Dijkstra (instead of a list that we need to sort)
+        """
         current_start = None
         start_find = False
         for e in self.__adj:
@@ -98,6 +105,7 @@ class Graph:
         heapq.heappush(queue, (0, current_start))
         # check if queue is empty or if all targeted end nodes have been browsed and dist marked
         while queue:
+            # Dijkstra is a greedy algorithm so we can break if each nodes are processed
             if all(dist[end][e] != math.inf for e in dist[end]):
                 break
             # extract the minimum distance of the queue and remove it           
@@ -105,16 +113,20 @@ class Graph:
             for e in self.__adj[u]:
                 v = e
                 weight = e[1]
-                #print(u[0])
+
                 if dist[v[0][0]][v[0][1]] > dist[u[0]][u[1]] + weight:
                     # assigning new dist for v node
-
                     dist[v[0][0]][v[0][1]] = dist[u[0]][u[1]] + weight
                     heapq.heappush(queue, (dist[v[0][0]][v[0][1]], v[0]))
                     # keep parent
                     prev[v[0]] = u
 
     def __BFS(self, start, end, dist, prev):
+        """
+        BFS browse that use a relaxation to update nodes distances and predecessors.
+        We use the same function to mark visited nodes and update theire dist. A visited nodes is a nodes with a dist != +inf.
+        As Dijkstra, we use dictionnary instead of list for stocking distances and previous nodes.
+        """
         for e in self.__adj:
             if not e[0] in dist:
                 dist[e[0]] = {}
@@ -128,10 +140,10 @@ class Graph:
             return []
 
         for u in self.__adj:
+            # Greedy algorithm because graph is linear, sorted, and don't have cycles. Then we can break if all arrivals nodes are processed
             if all(dist[end][e] != math.inf for e in dist[end]):
                 break
-            # don't need to check not visited node because we don't know
-            # how to reach them
+            # don't need to check not visited node because we don't know how to reach them
             if dist[u[0]][u[1]] != math.inf:
                 # for each childs
                 for e in self.__adj[u]:
@@ -145,12 +157,14 @@ class Graph:
             
 
     def __back_tracking(self, node, prev):
+        """
+        Retrace a path from the end node to the beginning node.
+        A beginning node have egot no previous node.
+        """
         path = []
 
-       # if node == None: #if we havent find an arrival
-        #    return []
+        # Backtracking the path and skip useless inter-state of the same node name
         while node :
-            #print(node)
             path.append(node)
             current = node
             tmp = node
@@ -163,9 +177,11 @@ class Graph:
 
         return path
 
-    # Dijkstra but we take the lowest time end node as end
     def earliest_arrival(self, start, end):
-        
+        """
+        Return the earliest arrival path.
+        Based on BFS.
+        """
         dist = {}
         prev = {}
 
@@ -184,11 +200,13 @@ class Graph:
         return self.__back_tracking(n, prev)
                 
     
-    # BFS 
     def latest_departure(self, start, end):
+        """
+        Return the latest departure path.
+        Based on BFS.
+        """
         dist = {}
-        prev = {}
-        
+        prev = {}  
         
         self.__BFS(start, end, dist, prev)
 
@@ -197,8 +215,8 @@ class Graph:
         if end not in dist:
             return []
 
+        # compare every path and keep the bigger start in term of time
         for e in dist[end]:    
-            #recovery name to pass to previous
             end_name = (end, e)
             if dist[end][e] != math.inf:       
                 tmp = self.__back_tracking(end_name, prev)
@@ -215,8 +233,13 @@ class Graph:
 
         return path
     
-    # BFS
+
     def fastest_path(self, start, end):
+        """
+        Return the fastest path in term of time and the taken time.
+        Based on BFS.
+        """
+
         dist = {}
         prev = {}
 
@@ -225,12 +248,11 @@ class Graph:
         if end not in dist:
             return []
 
+        # picking the min distance node in our dist dictionnary that have the same end as we wan't
         end_name = (end, min(dist[end], key=dist[end].get))
-
         if all(dist[end][e] == math.inf for e in dist[end]):
             return []
 
-        # Backtracking the path and skip useless inter-state of the same node name
         path = self.__back_tracking(end_name, prev)
         final_dist = dist[end][end_name[1]]
 
@@ -238,7 +260,10 @@ class Graph:
 
 
     def shortest_path(self, start, end):
-
+        """
+        Return the shortest path in term of time and it cost in distance.
+        Based on Dijkstra.
+        """
         dist = {}
         prev = {}   
 
@@ -249,7 +274,7 @@ class Graph:
 
         if all(dist[end][e] == math.inf for e in dist[end]):
             return []
-        # picking the lowest dist 
+        # picking the min distance node in our dist dictionnary that have the same end as we wan't
         end_name = (end, min(dist[end], key=dist[end].get))
         
         final_dist = dist[end][end_name[1]]
@@ -263,6 +288,9 @@ class Graph:
         self.__adj[vertex].append((to_edge, weight))
         
     def create_simplified(self, interval):
+        """
+        Method that create the simplified graph (\~G) and return it.
+        """
         g = Graph()
         v_in = {}
         v_out = {}
@@ -283,7 +311,6 @@ class Graph:
         
         for k in v_in:
             
-            #v[k] = set()
             v[k] = sorted(v_in[k].union(v_out[k]))
             
             tmp = None
@@ -301,20 +328,15 @@ class Graph:
 
         # for all nodes in our new graphs as a,1 a,2 a,3
         for e in g.__adj:
-            #print(e)
             tmp = ''
             # for all decendent of our node in the original graph 'a'
             for f in self.__adj[e[0]]:
-                #print('\t', f)
                 # 'b' or 'c'
                 if tmp != f[0]:
-                    #print('\t\t', tmp)
                     tmp = f[0]
                     current_weight = e[1] + f[2]
-                    # if the weight of the node exist in v_in of the letter f[0]
+                    # if the weight of the node exist in v_in of the letter f[0] and the original weight in v_out
                     if current_weight in v_in[f[0]] and current_weight - f[2] in v_out[e[0]]:
-                        #v_in[f[0]].remove(current_weight)
-                        #print("\t\t\t",f[0], v_in[f[0]])
                         g.__add_edge_simplified(e, (f[0], current_weight), 1)   
         
         return g

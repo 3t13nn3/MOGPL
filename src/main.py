@@ -11,16 +11,14 @@ if __name__ == "__main__":
     else:
         g.create_from_file(sys.argv[1])
     
+    # Interval to set the graph on a special time
     interval = [0,1000000000]
-    # g.print()
+
     g2 = g.create_simplified(interval)
-    
-    #g2.print()
+
     start = 'a'
-    end = 'f'
+    end = 'l'
 
-
-    
     print("-   -   -   -   -   -   -")
     print(f"\x1b[1m\x1b[32mStart: \'{start}\'\x1b[0m | \x1b[1m\x1b[31mEnd \'{end}\'\x1b[0m | On the interval \x1b[1m{interval}\x1b[0m:")
     print("-   -   -   -   -   -   -")
